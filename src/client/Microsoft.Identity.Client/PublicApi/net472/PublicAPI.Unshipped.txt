@@ -1,0 +1,7 @@
+Microsoft.Identity.Client.Extensibility.MsalTelemetryContext
+Microsoft.Identity.Client.Extensibility.MsalTelemetryEnrichment
+Microsoft.Identity.Client.Extensibility.MsalTelemetryEnrichment.Add(string key, object value) -> Microsoft.Identity.Client.Extensibility.MsalTelemetryEnrichment
+Microsoft.Identity.Client.Extensibility.MsalTelemetryEnrichment.MsalTelemetryEnrichment() -> void
+Microsoft.Identity.Client.Extensibility.MsalTelemetryEnrichment.Tags.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.KeyValuePair<string, object>>
+static Microsoft.Identity.Client.Extensibility.MsalTelemetryContext.Current.get -> Microsoft.Identity.Client.Extensibility.MsalTelemetryEnrichment
+static Microsoft.Identity.Client.Extensibility.MsalTelemetryContext.Current.set -> void

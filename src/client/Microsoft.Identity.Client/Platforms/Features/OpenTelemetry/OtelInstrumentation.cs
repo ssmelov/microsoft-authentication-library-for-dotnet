@@ -1,9 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using Microsoft.Identity.Client.Cache;
 using Microsoft.Identity.Client.Core;
+using Microsoft.Identity.Client.Extensibility;
 using Microsoft.Identity.Client.Internal;
 using Microsoft.Identity.Client.TelemetryCore;
 using Microsoft.Identity.Client.TelemetryCore.Internal.Events;
@@ -119,33 +121,36 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
             if (s_durationTotal.Value.Enabled)
             {
                 s_durationTotal.Value.Record(authResultMetadata.DurationTotalInMs,
+                    Enrich(
                         new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
                         new(TelemetryConstants.Platform, platform),
                         new(TelemetryConstants.ApiId, apiId),
                         new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
                         new(TelemetryConstants.CacheLevel, cacheLevel),
                         new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason),
-                        new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType));
+                        new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType)));
             }
 
             // Only log cache duration if L2 cache was used.
             if (s_durationInL2Cache.Value.Enabled && cacheLevel == CacheLevel.L2Cache)
             {
                 s_durationInL2Cache.Value.Record(authResultMetadata.DurationInCacheInMs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason));
+                    Enrich(
+                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
+                        new(TelemetryConstants.Platform, platform),
+                        new(TelemetryConstants.ApiId, apiId),
+                        new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason)));
             }
 
             // Only log duration in HTTP when token is fetched from IDP.
             if (s_durationInHttp.Value.Enabled && authResultMetadata.TokenSource == TokenSource.IdentityProvider)
             {
                 s_durationInHttp.Value.Record(authResultMetadata.DurationInHttpInMs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType));
+                    Enrich(
+                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
+                        new(TelemetryConstants.Platform, platform),
+                        new(TelemetryConstants.ApiId, apiId),
+                        new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType)));
             }
 
             // Only log duration in microseconds when the cache level is L1.
@@ -153,23 +158,25 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
                 && authResultMetadata.CacheLevel.Equals(CacheLevel.L1Cache))
             {
                 s_durationInL1CacheInUs.Value.Record(totalDurationInUs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
-                new(TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel),
-                new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason));
+                    Enrich(
+                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
+                        new(TelemetryConstants.Platform, platform),
+                        new(TelemetryConstants.ApiId, apiId),
+                        new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
+                        new(TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel),
+                        new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason)));
             }
 
             if (s_durationInExtensionInMs.Value.Enabled)
             {
-                s_durationInExtensionInMs.Value.Record(authResultMetadata.DurationCreatingExtendedTokenInUs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
-                new(TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel),
-                new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType));
+                s_durationInExtensionInMs.Value.Record(authResultMetadata.DurationCreatingExtendedTokenInUs, 
+                    Enrich(
+                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
+                        new(TelemetryConstants.Platform, platform),
+                        new(TelemetryConstants.ApiId, apiId),
+                        new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
+                        new(TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel),
+                        new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType)));
             }
         }
 
@@ -186,6 +193,7 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
             if (s_successCounter.Value.Enabled)
             {
                 s_successCounter.Value.Add(1,
+                    Enrich(
                         new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
                         new(TelemetryConstants.Platform, platform),
                         new(TelemetryConstants.ApiId, apiId),
@@ -193,7 +201,7 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
                         new(TelemetryConstants.TokenSource, tokenSource),
                         new(TelemetryConstants.CacheRefreshReason, cacheRefreshReason),
                         new(TelemetryConstants.CacheLevel, cacheLevel),
-                        new(TelemetryConstants.TokenType, tokenType));
+                        new(TelemetryConstants.TokenType, tokenType)));
                 logger.Verbose(() => "[OpenTelemetry] Completed incrementing to success counter.");
             }
         }
@@ -209,14 +217,32 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
             if (s_failureCounter.Value.Enabled)
             {
                 s_failureCounter.Value.Add(1,
+                    Enrich(
                         new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
                         new(TelemetryConstants.Platform, platform),
                         new(TelemetryConstants.ErrorCode, errorCode),
                         new(TelemetryConstants.ApiId, apiId),
                         new(TelemetryConstants.CallerSdkId, callerSdkId ?? string.Empty + "," + callerSdkVersion ?? string.Empty),
                         new(TelemetryConstants.CacheRefreshReason, cacheRefreshReason),
-                        new(TelemetryConstants.TokenType, tokenType));
+                        new(TelemetryConstants.TokenType, tokenType)));
             }
+        }
+
+        /// <summary>
+        /// Returns the base tags merged with any custom tags from <see cref="MsalTelemetryContext.Current"/>.
+        /// When no enrichment is set the original array is returned directly with no extra allocation.
+        /// </summary>
+        private static KeyValuePair<string, object>[] Enrich(params KeyValuePair<string, object>[] baseTags)
+        {
+            var enrichment = MsalTelemetryContext.Current;
+            if (enrichment is null || enrichment.Tags.Count == 0)
+                return baseTags;
+
+            var combined = new KeyValuePair<string, object>[baseTags.Length + enrichment.Tags.Count];
+            baseTags.CopyTo(combined, 0);
+            for (int i = 0; i < enrichment.Tags.Count; i++)
+                combined[baseTags.Length + i] = enrichment.Tags[i];
+            return combined;
         }
     }
 }
