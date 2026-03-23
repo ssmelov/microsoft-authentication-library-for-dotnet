@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Microsoft.Identity.Client.Cache;
 using Microsoft.Identity.Client.Core;
@@ -103,7 +105,8 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
             CacheLevel cacheLevel,
             long totalDurationInUs,
             AuthenticationResultMetadata authResultMetadata,
-            ILoggerAdapter logger)
+            ILoggerAdapter logger,
+            IList<KeyValuePair<string, object>> extraTags = null)
         {
             IncrementSuccessCounter(
                 platform,
@@ -114,62 +117,83 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
                 authResultMetadata.CacheRefreshReason,
                 cacheLevel,
                 logger,
-                authResultMetadata.TelemetryTokenType);
+                authResultMetadata.TelemetryTokenType,
+                extraTags);
 
             if (s_durationTotal.Value.Enabled)
             {
-                s_durationTotal.Value.Record(authResultMetadata.DurationTotalInMs,
-                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                        new(TelemetryConstants.Platform, platform),
-                        new(TelemetryConstants.ApiId, apiId),
-                        new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
-                        new(TelemetryConstants.CacheLevel, cacheLevel),
-                        new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason),
-                        new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.TokenSource, authResultMetadata.TokenSource },
+                    { TelemetryConstants.CacheLevel, cacheLevel },
+                    { TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason },
+                    { TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_durationTotal.Value.Record(authResultMetadata.DurationTotalInMs, tags);
             }
 
             // Only log cache duration if L2 cache was used.
             if (s_durationInL2Cache.Value.Enabled && cacheLevel == CacheLevel.L2Cache)
             {
-                s_durationInL2Cache.Value.Record(authResultMetadata.DurationInCacheInMs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_durationInL2Cache.Value.Record(authResultMetadata.DurationInCacheInMs, tags);
             }
 
             // Only log duration in HTTP when token is fetched from IDP.
             if (s_durationInHttp.Value.Enabled && authResultMetadata.TokenSource == TokenSource.IdentityProvider)
             {
-                s_durationInHttp.Value.Record(authResultMetadata.DurationInHttpInMs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_durationInHttp.Value.Record(authResultMetadata.DurationInHttpInMs, tags);
             }
 
             // Only log duration in microseconds when the cache level is L1.
             if (s_durationInL1CacheInUs.Value.Enabled && authResultMetadata.TokenSource == TokenSource.Cache
                 && authResultMetadata.CacheLevel.Equals(CacheLevel.L1Cache))
             {
-                s_durationInL1CacheInUs.Value.Record(totalDurationInUs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
-                new(TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel),
-                new(TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.TokenSource, authResultMetadata.TokenSource },
+                    { TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel },
+                    { TelemetryConstants.CacheRefreshReason, authResultMetadata.CacheRefreshReason }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_durationInL1CacheInUs.Value.Record(totalDurationInUs, tags);
             }
 
             if (s_durationInExtensionInMs.Value.Enabled)
             {
-                s_durationInExtensionInMs.Value.Record(authResultMetadata.DurationCreatingExtendedTokenInUs,
-                new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                new(TelemetryConstants.Platform, platform),
-                new(TelemetryConstants.ApiId, apiId),
-                new(TelemetryConstants.TokenSource, authResultMetadata.TokenSource),
-                new(TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel),
-                new(TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.TokenSource, authResultMetadata.TokenSource },
+                    { TelemetryConstants.CacheLevel, authResultMetadata.CacheLevel },
+                    { TelemetryConstants.TokenType, authResultMetadata.TelemetryTokenType }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_durationInExtensionInMs.Value.Record(authResultMetadata.DurationCreatingExtendedTokenInUs, tags);
             }
         }
 
@@ -181,19 +205,24 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
             CacheRefreshReason cacheRefreshReason,
             CacheLevel cacheLevel,
             ILoggerAdapter logger,
-            int tokenType)
+            int tokenType,
+            IList<KeyValuePair<string, object>> extraTags = null)
         {
             if (s_successCounter.Value.Enabled)
             {
-                s_successCounter.Value.Add(1,
-                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                        new(TelemetryConstants.Platform, platform),
-                        new(TelemetryConstants.ApiId, apiId),
-                        new(TelemetryConstants.CallerSdkId, callerSdkId ?? string.Empty + "," + callerSdkVersion ?? string.Empty),
-                        new(TelemetryConstants.TokenSource, tokenSource),
-                        new(TelemetryConstants.CacheRefreshReason, cacheRefreshReason),
-                        new(TelemetryConstants.CacheLevel, cacheLevel),
-                        new(TelemetryConstants.TokenType, tokenType));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.CallerSdkId, (callerSdkId ?? string.Empty) + "," + (callerSdkVersion ?? string.Empty) },
+                    { TelemetryConstants.TokenSource, tokenSource },
+                    { TelemetryConstants.CacheRefreshReason, cacheRefreshReason },
+                    { TelemetryConstants.CacheLevel, cacheLevel },
+                    { TelemetryConstants.TokenType, tokenType }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_successCounter.Value.Add(1, tags);
                 logger.Verbose(() => "[OpenTelemetry] Completed incrementing to success counter.");
             }
         }
@@ -204,19 +233,31 @@ namespace Microsoft.Identity.Client.Platforms.Features.OpenTelemetry
             string callerSdkId,
             string callerSdkVersion,
             CacheRefreshReason cacheRefreshReason,
-            int tokenType)
+            int tokenType,
+            IList<KeyValuePair<string, object>> extraTags = null)
         {
             if (s_failureCounter.Value.Enabled)
             {
-                s_failureCounter.Value.Add(1,
-                        new(TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion()),
-                        new(TelemetryConstants.Platform, platform),
-                        new(TelemetryConstants.ErrorCode, errorCode),
-                        new(TelemetryConstants.ApiId, apiId),
-                        new(TelemetryConstants.CallerSdkId, callerSdkId ?? string.Empty + "," + callerSdkVersion ?? string.Empty),
-                        new(TelemetryConstants.CacheRefreshReason, cacheRefreshReason),
-                        new(TelemetryConstants.TokenType, tokenType));
+                var tags = new TagList
+                {
+                    { TelemetryConstants.MsalVersion, MsalIdHelper.GetMsalVersion() },
+                    { TelemetryConstants.Platform, platform },
+                    { TelemetryConstants.ErrorCode, errorCode },
+                    { TelemetryConstants.ApiId, apiId },
+                    { TelemetryConstants.CallerSdkId, (callerSdkId ?? string.Empty) + "," + (callerSdkVersion ?? string.Empty) },
+                    { TelemetryConstants.CacheRefreshReason, cacheRefreshReason },
+                    { TelemetryConstants.TokenType, tokenType }
+                };
+                AppendExtraTags(ref tags, extraTags);
+                s_failureCounter.Value.Add(1, tags);
             }
+        }
+
+        private static void AppendExtraTags(ref TagList tags, IList<KeyValuePair<string, object>> extraTags)
+        {
+            if (extraTags == null) return;
+            foreach (var tag in extraTags)
+                tags.Add(tag.Key, tag.Value);
         }
     }
 }

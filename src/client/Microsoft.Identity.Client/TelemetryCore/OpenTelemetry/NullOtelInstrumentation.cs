@@ -22,31 +22,34 @@ namespace Microsoft.Identity.Client.TelemetryCore.OpenTelemetry
             CacheLevel cacheLevel,
             long totalDurationInUs,
             AuthenticationResultMetadata authResultMetadata,
-            ILoggerAdapter logger)
+            ILoggerAdapter logger,
+            IList<KeyValuePair<string, object>> extraTags = null)
         {
             // No op
         }
 
-        public void LogFailureMetrics(string platform, 
-            string errorCode, 
-            ApiEvent.ApiIds apiId, 
-            string callerSdkId,
-            string callerSdkVersion,
-            CacheRefreshReason cacheRefreshReason,
-            int tokenType)
-        {
-            // No op
-        }
-
-        void IOtelInstrumentation.IncrementSuccessCounter(string platform, 
+        public void LogFailureMetrics(string platform,
+            string errorCode,
             ApiEvent.ApiIds apiId,
             string callerSdkId,
             string callerSdkVersion,
-            TokenSource tokenSource, 
-            CacheRefreshReason cacheRefreshReason, 
-            CacheLevel cacheLevel, 
+            CacheRefreshReason cacheRefreshReason,
+            int tokenType,
+            IList<KeyValuePair<string, object>> extraTags = null)
+        {
+            // No op
+        }
+
+        void IOtelInstrumentation.IncrementSuccessCounter(string platform,
+            ApiEvent.ApiIds apiId,
+            string callerSdkId,
+            string callerSdkVersion,
+            TokenSource tokenSource,
+            CacheRefreshReason cacheRefreshReason,
+            CacheLevel cacheLevel,
             ILoggerAdapter logger,
-            int tokenType)
+            int tokenType,
+            IList<KeyValuePair<string, object>> extraTags)
         {
             // No op
         }

@@ -44,6 +44,12 @@ namespace Microsoft.Identity.Client.ApiConfig.Parameters
         public string ExtraClientAssertionClaims { get; internal set; }
 
         /// <summary>
+        /// Optional list of static tags to be appended
+        /// to every OpenTelemetry metric emitted for this token acquisition call.
+        /// </summary>
+        public IList<KeyValuePair<string, object>> ExtraOtelTags { get; set; }
+
+        /// <summary>
         /// Optional delegate for obtaining attestation JWT for Credential Guard keys.
         /// Set by the KeyAttestation package via .WithAttestationSupport().
         /// Returns null for non-attested flows.

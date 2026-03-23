@@ -121,7 +121,6 @@ namespace Microsoft.Identity.Client.Internal.Requests
 
         private void LogSuccessTelemetryToOtel(AuthenticationResult authenticationResult, ApiEvent apiEvent, long durationInUs)
         {
-            // Log metrics
             ServiceBundle.PlatformProxy.OtelInstrumentation.LogSuccessMetrics(
                         ServiceBundle.PlatformProxy.GetProductName(),
                         apiEvent.ApiId,
@@ -130,12 +129,12 @@ namespace Microsoft.Identity.Client.Internal.Requests
                         GetCacheLevel(authenticationResult),
                         durationInUs,
                         authenticationResult.AuthenticationResultMetadata,
-                        AuthenticationRequestParameters.RequestContext.Logger);
+                        AuthenticationRequestParameters.RequestContext.Logger,
+                        AuthenticationRequestParameters.ExtraOtelTags);
         }
 
         private void LogFailureTelemetryToOtel(string errorCodeToLog, ApiEvent apiEvent, CacheRefreshReason cacheRefreshReason)
         {
-            // Log metrics
             ServiceBundle.PlatformProxy.OtelInstrumentation.LogFailureMetrics(
                         ServiceBundle.PlatformProxy.GetProductName(),
                         errorCodeToLog,
@@ -143,7 +142,8 @@ namespace Microsoft.Identity.Client.Internal.Requests
                         apiEvent.CallerSdkApiId,
                         apiEvent.CallerSdkVersion,
                         cacheRefreshReason,
-                        apiEvent.TokenType);
+                        apiEvent.TokenType,
+                        AuthenticationRequestParameters.ExtraOtelTags);
         }
 
         private Tuple<string, string> ParseScopesForTelemetry()

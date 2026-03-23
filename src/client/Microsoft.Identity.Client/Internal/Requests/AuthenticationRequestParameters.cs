@@ -81,6 +81,8 @@ namespace Microsoft.Identity.Client.Internal.Requests
 
         public ApiEvent.ApiIds ApiId => _commonParameters.ApiId;
 
+        public IList<KeyValuePair<string, object>> ExtraOtelTags => _commonParameters.ExtraOtelTags;
+
         public RequestContext RequestContext { get; }
 
         #region Authority
