@@ -181,6 +181,7 @@ namespace Microsoft.Identity.Client.Internal.Requests
         /// If set, MSAL should add the key / value pairs from the provider to the token endpoint instead of generating a client assertion
         /// </summary>
         public IList<Func<OnBeforeTokenRequestData, Task>> OnBeforeTokenRequestHandler { get => _commonParameters.OnBeforeTokenRequestHandler; }
+        public Action<TokenAcquisitionResult> TokenAcquisitionResultCallback { get => _commonParameters.TokenAcquisitionResultCallback; }
 
         public IDictionary<string, string> ExtraHttpHeaders => _commonParameters.ExtraHttpHeaders;
 

@@ -106,7 +106,7 @@ namespace Microsoft.Identity.Client.Internal.Requests
                 }
                 AuthenticationRequestParameters.RequestContext.Logger.ErrorPii(ex);
 
-                LogFailureTelemetryToOtel(ex.ErrorCode, apiEvent, apiEvent.CacheInfo);
+                LogFailureTelemetryToOtel(ex.ErrorCode, apiEvent, apiEvent.CacheInfo, ex);
                 throw;
             }
             catch (Exception ex)
@@ -114,7 +114,7 @@ namespace Microsoft.Identity.Client.Internal.Requests
                 apiEvent.ApiErrorCode = ex.GetType().Name;
                 AuthenticationRequestParameters.RequestContext.Logger.ErrorPii(ex);
 
-                LogFailureTelemetryToOtel(ex.GetType().Name, apiEvent, apiEvent.CacheInfo);
+                LogFailureTelemetryToOtel(ex.GetType().Name, apiEvent, apiEvent.CacheInfo, ex);
                 throw;
             }
         }
@@ -131,9 +131,12 @@ namespace Microsoft.Identity.Client.Internal.Requests
                         durationInUs,
                         authenticationResult.AuthenticationResultMetadata,
                         AuthenticationRequestParameters.RequestContext.Logger);
+
+            AuthenticationRequestParameters.TokenAcquisitionResultCallback?.Invoke(
+                new TokenAcquisitionResult(authenticationResult, null));
         }
 
-        private void LogFailureTelemetryToOtel(string errorCodeToLog, ApiEvent apiEvent, CacheRefreshReason cacheRefreshReason)
+        private void LogFailureTelemetryToOtel(string errorCodeToLog, ApiEvent apiEvent, CacheRefreshReason cacheRefreshReason, Exception exception)
         {
             // Log metrics
             ServiceBundle.PlatformProxy.OtelInstrumentation.LogFailureMetrics(
@@ -144,6 +147,9 @@ namespace Microsoft.Identity.Client.Internal.Requests
                         apiEvent.CallerSdkVersion,
                         cacheRefreshReason,
                         apiEvent.TokenType);
+
+            AuthenticationRequestParameters.TokenAcquisitionResultCallback?.Invoke(
+                new TokenAcquisitionResult(null, exception));
         }
 
         private Tuple<string, string> ParseScopesForTelemetry()

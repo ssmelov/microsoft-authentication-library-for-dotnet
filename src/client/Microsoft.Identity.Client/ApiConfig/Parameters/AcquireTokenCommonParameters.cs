@@ -35,6 +35,7 @@ namespace Microsoft.Identity.Client.ApiConfig.Parameters
         public IDictionary<string, string> ExtraHttpHeaders { get; set; }
         public PoPAuthenticationConfiguration PopAuthenticationConfiguration { get; set; }
         public IList<Func<OnBeforeTokenRequestData, Task>> OnBeforeTokenRequestHandler { get; internal set; }
+        public Action<TokenAcquisitionResult> TokenAcquisitionResultCallback { get; internal set; }
         public X509Certificate2 MtlsCertificate { get; internal set; }
         public List<string> AdditionalCacheParameters { get; set; }
         public SortedList<string, Func<CancellationToken, Task<string>>> CacheKeyComponents { get; internal set; }
